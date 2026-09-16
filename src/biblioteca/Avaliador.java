@@ -1,21 +1,28 @@
 package biblioteca;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Stack;
 
 public class Avaliador {
 
-    public boolean avaliar(
+    public List<String> expressoes = new ArrayList<>();
+
+    public List<Boolean> avaliar(
             List<UnidadeLexica> expressaoPosfixa,
             Interpretacao interpretacao) {
 
         Stack<Boolean> valores = new Stack<>();
+        Stack<String> textos = new Stack<>();
+        Stack<Boolean> compostos = new Stack<>();
+
+        List<Boolean> resultados = new ArrayList<>();
+        List<String> expressoesLocal = new ArrayList<>();
 
         for (UnidadeLexica unidade : expressaoPosfixa) {
 
             String tipo = unidade.getTipo();
 
-            // Proposição
             if (tipo.equals(Constantes.PROPOSICAO)) {
 
                 boolean valor = interpretacao.obterValor(
@@ -23,25 +30,48 @@ public class Avaliador {
                 );
 
                 valores.push(valor);
+                textos.push(unidade.getTexto());
+                compostos.push(false);
             }
 
-            // Negação
             else if (tipo.equals(Constantes.NEGACAO)) {
 
                 verificarQuantidade(valores, 1);
 
                 boolean valor = valores.pop();
+                String texto = textos.pop();
+                boolean composto = compostos.pop();
 
-                valores.push(!valor);
+                boolean resultado = !valor;
+
+                String textoResultado;
+
+                if (composto) {
+                    textoResultado = "¬(" + texto + ")";
+                } else {
+                    textoResultado = "¬" + texto;
+                }
+
+                valores.push(resultado);
+                textos.push(textoResultado);
+                compostos.push(false);
+
+                resultados.add(resultado);
+                expressoesLocal.add(textoResultado);
             }
 
-            // Operadores binários
             else if (ehOperadorBinario(tipo)) {
 
                 verificarQuantidade(valores, 2);
 
                 boolean direita = valores.pop();
                 boolean esquerda = valores.pop();
+
+                String textoDireita = textos.pop();
+                String textoEsquerda = textos.pop();
+
+                boolean compostoDireita = compostos.pop();
+                boolean compostoEsquerda = compostos.pop();
 
                 boolean resultado;
 
@@ -73,7 +103,22 @@ public class Avaliador {
                     );
                 }
 
+                String textoEsquerdaFormatado =
+                        compostoEsquerda ? "(" + textoEsquerda + ")" : textoEsquerda;
+
+                String textoDireitaFormatado =
+                        compostoDireita ? "(" + textoDireita + ")" : textoDireita;
+
+                String textoResultado =
+                        textoEsquerdaFormatado + " " + unidade.getTexto()
+                                + " " + textoDireitaFormatado;
+
                 valores.push(resultado);
+                textos.push(textoResultado);
+                compostos.push(true);
+
+                resultados.add(resultado);
+                expressoesLocal.add(textoResultado);
             }
         }
 
@@ -84,7 +129,15 @@ public class Avaliador {
             );
         }
 
-        return valores.pop();
+        if (resultados.isEmpty()) {
+
+            resultados.add(valores.peek());
+            expressoesLocal.add(textos.peek());
+        }
+
+        expressoes = expressoesLocal;
+
+        return resultados;
     }
 
     private boolean ehOperadorBinario(String tipo) {

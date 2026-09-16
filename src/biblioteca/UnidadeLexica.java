@@ -2,8 +2,8 @@ package biblioteca;
 
 public class UnidadeLexica {
 
-    private String tipo;
-    private String texto;
+    private final String tipo;
+    private final String texto;
 
     public UnidadeLexica(String tipo, String texto) {
         this.tipo = tipo;

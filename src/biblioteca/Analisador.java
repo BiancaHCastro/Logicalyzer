@@ -5,10 +5,10 @@ import java.util.List;
 
 public class Analisador {
 
-    private AnalisadorLexico analisadorLexico;
-    private AnalisadorSintatico analisadorSintatico;
-    private GeradorInterpretacoes geradorInterpretacoes;
-    private Avaliador avaliador;
+    private final AnalisadorLexico analisadorLexico;
+    private final AnalisadorSintatico analisadorSintatico;
+    private final GeradorInterpretacoes geradorInterpretacoes;
+    private final Avaliador avaliador;
 
     public Analisador() {
 
@@ -20,15 +20,12 @@ public class Analisador {
 
     public ResultadoAnalise analisar(String expressao) {
 
-        // ETAPA I - Análise léxica
         List<UnidadeLexica> unidades =
                 analisadorLexico.analisar(expressao);
 
-        // ETAPA II - Análise sintática
         List<UnidadeLexica> expressaoPosfixa =
                 analisadorSintatico.analisar(unidades);
 
-        // Obtém as proposições
         List<String> proposicoes =
                 obterProposicoes(unidades);
 
@@ -39,22 +36,22 @@ public class Analisador {
             );
         }
 
-        // Gera todas as interpretações
         List<Interpretacao> interpretacoes =
                 geradorInterpretacoes.gerar(proposicoes);
 
-        // Avalia cada interpretação
+        List<List<Boolean>> resultadosDetalhados = new ArrayList<>();
         List<Boolean> resultados = new ArrayList<>();
 
         for (Interpretacao interpretacao : interpretacoes) {
 
-            boolean resultado =
+            List<Boolean> passos =
                     avaliador.avaliar(
                             expressaoPosfixa,
                             interpretacao
                     );
 
-            resultados.add(resultado);
+            resultadosDetalhados.add(passos);
+            resultados.add(passos.get(passos.size() - 1));
         }
 
         String classificacao =
@@ -63,7 +60,8 @@ public class Analisador {
         return new ResultadoAnalise(
                 proposicoes,
                 interpretacoes,
-                resultados,
+                resultadosDetalhados,
+                avaliador.expressoes,
                 classificacao
         );
     }
